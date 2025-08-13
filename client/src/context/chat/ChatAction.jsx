@@ -6,14 +6,13 @@ function ChatAction(props) {
   const userInitial = {
     onlineUsers: [],
     currentChat: null,
-    sentChatRequest: [],
-    receivedChatRequest: [],
+    chatRequests: [],
     chatError: {},
   };
   const [state, dispatch] = useReducer(ChatReducer, userInitial);
 
-  const setOnlineUsers = async (liveUsers, user) => {
-    const userList = liveUsers.filter((u) => u.id !== user.id);
+  const setOnlineUsers = async (liveUsers, socketId) => {
+    const userList = liveUsers.filter((u) => u.id !== socketId);
     dispatch({
       type: "SET_LIVE_USERS",
       payload: userList,
@@ -25,17 +24,29 @@ function ChatAction(props) {
       payload: user,
     });
   };
-  const updateSendChatRequest = async (user) => {
+
+  const addReceivedRequests = async (socketId) => {
+    const userList = [...state.chatRequests];
     dispatch({
-      type: "SEND_CHAT_REQUEST",
-      payload: user,
+      type: "RECEIVED_CHAT_REQUEST",
+      payload: [...userList, socketId],
     });
   };
-  const updateReceivedRequests = async (user) => {
+  const updateReceivedRequests = async (socketId) => {
+    const userList = state.chatRequests.filter((u) => u !== socketId);
     dispatch({
-      type: "RECEIVE_CHAT_REQUEST",
-      payload: user,
+      type: "RECEIVED_CHAT_REQUEST",
+      payload: userList,
     });
+  };
+  const createChatrequest = (newUser, socket) => {
+    console.log("createChatrequest", newUser);
+    socket.emit("chat-user", socket.id, newUser.id);
+    setCurrentChat(newUser);
+  };
+  const ExitChat = (to) => {
+    setCurrentChat(null);
+    updateReceivedRequests(to.id);
   };
 
   return (
@@ -43,13 +54,14 @@ function ChatAction(props) {
       value={{
         onlineUsers: state.onlineUsers,
         currentChat: state.currentChat,
-        sentChatRequest: state.sentChatRequest,
-        receivedChatRequest: state.receivedChatRequest,
+        chatRequests: state.chatRequests,
         chatError: state.chatError,
         setOnlineUsers,
         setCurrentChat,
-        updateSendChatRequest,
+        addReceivedRequests,
         updateReceivedRequests,
+        createChatrequest,
+        ExitChat,
       }}
     >
       {props.children}

@@ -6,63 +6,45 @@ import ChatContext from "./context/chat/ChatContext";
 
 function App() {
   const [username, setUsername] = useState("");
-  const [chatRequest, setChatRequest] = useState([]);
 
   const socketRef = useRef();
   const userContext = useContext(UserContext);
-  const { socketConnection, userName, socketId, createUser } = userContext;
-  const chatContext = userContext(ChatContext);
+  const { socketConnection, handleRegister, userName, socketId, createUser } =
+    userContext;
+  const chatContext = useContext(ChatContext);
   const {
     setOnlineUsers,
     onlineUsers,
     setCurrentChat,
     currentChat,
-    updateSendChatRequest,
+    chatRequests,
+    createChatrequest,
+    addReceivedRequests,
     updateReceivedRequests,
   } = chatContext;
+
   useEffect(() => {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
 
     socketConnection(socket);
     socket.on("users", (users) => {
-      setOnlineUsers(users);
+      setOnlineUsers(users, socketRef.current.id);
       console.log("users", users);
     });
 
     // Handle new user connection
-    socket.on("receive-request", (newUser) => {
-      console.log(`User connected: ${newUser}`);
-      setChatRequest((prev) => [...prev, newUser]);
+    socket.on("receive-request", (newUserId) => {
+      console.log(`Received Request: ${newUserId}`);
+      addReceivedRequests(newUserId);
     });
+
     socket.on("cancelled-request", (cancelledUser) => {
-      console.log(`User disconnected: ${cancelledUser}`);
-      setChatRequest((prev) => prev.filter((u) => u !== cancelledUser));
+      console.log(`Request Cancelled: ${cancelledUser}`);
+      updateReceivedRequests(cancelledUser);
     });
   }, []);
 
-  const handleRegister = () => {
-    if (username) {
-      socketRef.current.emit("register", username, () => {
-        console.log("registered");
-        createUser(username, socketRef.current.id);
-      });
-    }
-  };
-
-  const handleChatrequest = (requestedUser) => {
-    setCurrentChat(requestedUser);
-  };
-
-  const createChatrequest = (newUser) => {
-    console.log("createChatrequest", newUser);
-    socketRef.current.emit("chat-user", username, newUser.id);
-    setCurrentChat(newUser);
-  };
-  const handleExitChat = (to) => {
-    setCurrentChat(null);
-    setChatRequest((prev) => prev.filter((u) => u !== to.name));
-  };
   return (
     <div className="container mt-5">
       {!currentChat ? (
@@ -75,7 +57,10 @@ function App() {
               setUsername(e.target.value + Math.floor(Math.random() * 100))
             }
           />
-          <button className="btn btn-primary mb-3" onClick={handleRegister}>
+          <button
+            className="btn btn-primary mb-3"
+            onClick={() => handleRegister(username)}
+          >
             Join
           </button>
           <h5>Online Users</h5>
@@ -86,17 +71,17 @@ function App() {
                 className="list-group-item d-flex justify-content-between"
               >
                 {user.name}
-                {chatRequest.includes(user.name) ? (
+                {chatRequests.includes(user.id) ? (
                   <button
                     className="btn btn-sm btn-outline-success"
-                    onClick={() => handleChatrequest(user)}
+                    onClick={() => setCurrentChat(user)}
                   >
                     accept
                   </button>
                 ) : (
                   <button
                     className="btn btn-sm btn-outline-success"
-                    onClick={() => createChatrequest(user)}
+                    onClick={() => createChatrequest(user,socketRef.current)}
                   >
                     Chat
                   </button>
@@ -106,7 +91,7 @@ function App() {
           </ul>
         </div>
       ) : (
-        <TextChat to={currentChat} from={username} onBack={handleExitChat} />
+        <TextChat to={currentChat} from={username} />
       )}
     </div>
   );

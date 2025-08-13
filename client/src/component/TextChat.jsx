@@ -1,7 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import UserContext from "../context/user/UserContext";
+import ChatContext from "../context/chat/ChatContext";
 
-const TextChat = ({ to, from, onBack }) => {
+const TextChat = ({ to, from }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const socketRef = useRef();
@@ -11,6 +12,8 @@ const TextChat = ({ to, from, onBack }) => {
   const userContext = useContext(UserContext);
   const { socket } = userContext;
 
+  const chatContext = useContext(ChatContext);
+  const { ExitChat } = chatContext;
   useEffect(() => {
     // Initialize socket connection
     socketRef.current = socket;
@@ -63,7 +66,7 @@ const TextChat = ({ to, from, onBack }) => {
       peerRef.current.close(); // Close the peer connection
       peerRef.current = null; // Clear the reference
       console.log("closed connection");
-      onBack(to);
+      ExitChat(to);
     }
   }; // Define han  dleExit
 

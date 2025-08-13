@@ -14,6 +14,7 @@ function UserAction(props) {
 
   const [state, dispatch] = useReducer(UserReducer, userInitial);
   const socketConnection = async (socket) => {
+    console.log("socket", socket);
     dispatch({
       type: "CREATE_SOCKET",
       payload: socket,
@@ -26,6 +27,17 @@ function UserAction(props) {
     });
   };
 
+  const handleRegister = (user_name) => {
+    if (user_name) {
+      state.socket.emit("register", user_name, () => {
+        dispatch({
+          type: "CREATE_USER",
+          payload: { userName: user_name, socketId: state?.socket.id },
+        });
+      });
+    }
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -36,6 +48,7 @@ function UserAction(props) {
         error: state.error,
         socketConnection,
         createUser,
+        handleRegister,
       }}
     >
       {props.children}

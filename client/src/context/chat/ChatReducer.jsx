@@ -12,16 +12,10 @@ const ChatReducer = (state, action) => {
         currentChat: action.payload,
       };
 
-    case "SEND_CHAT_REQUEST":
+    case "RECEIVED_CHAT_REQUEST":
       return {
         ...state,
-        sentChatRequest: action.payload,
-      };
-
-    case "RECEIVE_CHAT_REQUEST":
-      return {
-        ...state,
-        receivedChatRequest: action.payload,
+        chatRequests: action.payload,
       };
 
     case "CHAT_ERROR":
