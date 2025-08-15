@@ -5,7 +5,7 @@ import ChatContext from "../context/chat/ChatContext";
 const TextChat = ({ to, from }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
-  const socketRef = useRef();
+
   const peerRef = useRef();
   const dataChannelRef = useRef();
 
@@ -16,12 +16,11 @@ const TextChat = ({ to, from }) => {
   const { ExitChat } = chatContext;
   useEffect(() => {
     // Initialize socket connection
-    socketRef.current = socket;
 
     createPeerConnection(to);
 
     // Handle offer from other users
-    socketRef.current.on("receive-offer", async (offer) => {
+    socket.on("receive-offer", async (offer) => {
       const peer = new RTCPeerConnection();
       peerRef.current = peer;
       console.log("peer.signalingState", peer.signalingState);
@@ -30,14 +29,14 @@ const TextChat = ({ to, from }) => {
 
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
-        socketRef.current.emit("send-answer", to, answer);
+        socket.emit("send-answer", to, answer);
 
         createDataChannel(peer, false); // Create the data channel as the receiving peer
       }
     });
 
     // Handle answer from other users
-    socketRef.current.on("receive-answer", (answer) => {
+    socket.on("receive-answer", (answer) => {
       if (
         peerRef.current &&
         peerRef.current.signalingState === "have-local-offer"
@@ -47,7 +46,7 @@ const TextChat = ({ to, from }) => {
     });
 
     // Handle ICE candidates
-    socketRef.current.on("receive-candidate", (candidate) => {
+    socket.on("receive-candidate", (candidate) => {
       console.log("receive-candidate", candidate);
       const iceCandidate = new RTCIceCandidate(candidate);
       peerRef.current.addIceCandidate(iceCandidate);
@@ -55,9 +54,9 @@ const TextChat = ({ to, from }) => {
 
     return () => {
       // Remove socket listeners
-      socketRef.current.off("receive-offer");
-      socketRef.current.off("receive-answer");
-      socketRef.current.off("receive-candidate");
+      socket.off("receive-offer");
+      socket.off("receive-answer");
+      socket.off("receive-candidate");
     };
   }, [socket]);
 
@@ -80,7 +79,7 @@ const TextChat = ({ to, from }) => {
     // Handle ICE candidates
     peer.onicecandidate = (e) => {
       if (e.candidate) {
-        socketRef.current.emit("send-candidate", newUserId, e.candidate);
+        socket.emit("send-candidate", newUserId, e.candidate);
         console.log(peerRef.current.localDescription);
       }
     };
@@ -88,7 +87,7 @@ const TextChat = ({ to, from }) => {
     // Create offer
     peer.createOffer().then((offer) => {
       peer.setLocalDescription(offer);
-      socketRef.current.emit("send-offer", newUserId, offer);
+      socket.emit("send-offer", newUserId, offer);
       console.log("send-offer");
     });
   };
@@ -126,7 +125,7 @@ const TextChat = ({ to, from }) => {
     };
 
     dataChannel.onclose = () => {
-      socketRef.current.emit("exit-chat", to, from);
+      socket.emit("exit-chat", to, from);
       console.log("Data channel is closed");
       dataChannelRef.current.close();
       dataChannelRef.current = null;

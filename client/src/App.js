@@ -26,23 +26,10 @@ function App() {
   useEffect(() => {
     const socket = io("http://localhost:5000");
     socketRef.current = socket;
-
     socketConnection(socket);
-    socket.on("users", (users) => {
-      setOnlineUsers(users, socketRef.current.id);
-      console.log("users", users);
-    });
-
-    // Handle new user connection
-    socket.on("receive-request", (newUserId) => {
-      console.log(`Received Request: ${newUserId}`);
-      addReceivedRequests(newUserId);
-    });
-
-    socket.on("cancelled-request", (cancelledUser) => {
-      console.log(`Request Cancelled: ${cancelledUser}`);
-      updateReceivedRequests(cancelledUser);
-    });
+    setOnlineUsers(socket);
+    addReceivedRequests(socket);
+    updateReceivedRequests(socket);
   }, []);
 
   return (
@@ -81,7 +68,7 @@ function App() {
                 ) : (
                   <button
                     className="btn btn-sm btn-outline-success"
-                    onClick={() => createChatrequest(user,socketRef.current)}
+                    onClick={() => createChatrequest(user, socketRef.current)}
                   >
                     Chat
                   </button>

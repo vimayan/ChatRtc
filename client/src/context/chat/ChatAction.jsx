@@ -11,11 +11,15 @@ function ChatAction(props) {
   };
   const [state, dispatch] = useReducer(ChatReducer, userInitial);
 
-  const setOnlineUsers = async (liveUsers, socketId) => {
-    const userList = liveUsers.filter((u) => u.id !== socketId);
-    dispatch({
-      type: "SET_LIVE_USERS",
-      payload: userList,
+  const setOnlineUsers = async (socket) => {
+    socket.on("users", (users) => {
+      console.log("users", users);
+      const userList = users.filter((u) => u.id !== socket.id);
+      console.log(userList, "userList");
+      dispatch({
+        type: "SET_LIVE_USERS",
+        payload: userList,
+      });
     });
   };
   const setCurrentChat = async (user) => {
@@ -25,18 +29,24 @@ function ChatAction(props) {
     });
   };
 
-  const addReceivedRequests = async (socketId) => {
-    const userList = [...state.chatRequests];
-    dispatch({
-      type: "RECEIVED_CHAT_REQUEST",
-      payload: [...userList, socketId],
+  const addReceivedRequests = async (socket) => {
+    socket.on("receive-request", (newUserId) => {
+      console.log(`Received Request: ${newUserId}`);
+      const userList = [...state.chatRequests];
+      dispatch({
+        type: "RECEIVED_CHAT_REQUEST",
+        payload: [...userList, newUserId],
+      });
     });
   };
-  const updateReceivedRequests = async (socketId) => {
-    const userList = state.chatRequests.filter((u) => u !== socketId);
-    dispatch({
-      type: "RECEIVED_CHAT_REQUEST",
-      payload: userList,
+  const updateReceivedRequests = async (socket) => {
+    socket.on("cancelled-request", (cancelledUser) => {
+      console.log(`Request Cancelled: ${cancelledUser}`);
+      const userList = state.chatRequests.filter((u) => u !== cancelledUser);
+      dispatch({
+        type: "RECEIVED_CHAT_REQUEST",
+        payload: userList,
+      });
     });
   };
   const createChatrequest = (newUser, socket) => {
@@ -46,7 +56,11 @@ function ChatAction(props) {
   };
   const ExitChat = (to) => {
     setCurrentChat(null);
-    updateReceivedRequests(to.id);
+    const userList = state.chatRequests.filter((u) => u !== to.id);
+    dispatch({
+      type: "RECEIVED_CHAT_REQUEST",
+      payload: userList,
+    });
   };
 
   return (

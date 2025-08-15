@@ -22,10 +22,7 @@ const UserReducer = (state, action) => {
       // Update the state with the updated peer connection
       return {
         ...state,
-        peerConnection: {
-          ...state.peerConnection,
-          ...action.payload,
-        },
+        peerConnection: action.payload,
       };
 
     case "CREATE_DATA_CHANNEL":

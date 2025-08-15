@@ -14,6 +14,7 @@ function UserAction(props) {
 
   const [state, dispatch] = useReducer(UserReducer, userInitial);
   const socketConnection = async (socket) => {
+    // Handle new user connection
     console.log("socket", socket);
     dispatch({
       type: "CREATE_SOCKET",
