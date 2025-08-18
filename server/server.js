@@ -22,7 +22,7 @@ app.use(cors());
 const onlineUsers = {};
 
 io.on("connection", (socket) => {
-  socket.on("register", (username,callback) => {
+  socket.on("register", (username, callback) => {
     onlineUsers[socket.id] = username;
     io.emit(
       "users",
@@ -30,6 +30,14 @@ io.on("connection", (socket) => {
     );
     callback();
   });
+
+  // socket.on("register", (username) => {
+  //   onlineUsers[socket.id] = username;
+  //   io.emit(
+  //     "users",
+  //     Object.entries(onlineUsers).map(([id, name]) => ({ id, name }))
+  //   );
+  // });
   // Handle initial users list
   socket.on("chat-user", (from, to) => {
     console.log(from, to, "chat-user");
@@ -43,16 +51,22 @@ io.on("connection", (socket) => {
     // }
   });
 
-  // Receive and forward ICE candidates
-  socket.on("send-candidate", (userId, candidate) => {
-    console.log(`Sending ICE candidate from ${userId}`);
-    socket.to(userId.id).emit("receive-candidate", candidate);
+  socket.on("send-local-candidate", (to, from, candidate) => {
+    console.log(`Sending local ICE candidate to ${from.name}`);
+    socket.to(to.id).emit("receive-remote-candidate", candidate, from);
+  });
+
+  // Receive and forward ICE candi
+  // dates
+  socket.on("send-candidate", (user, candidate) => {
+    console.log(`Sending ICE candidate to ${user.name}`);
+    socket.to(user.id).emit("receive-candidate", candidate);
   });
 
   // Receive and forward WebRTC offer
-  socket.on("send-offer", (userId, offer) => {
-    console.log(`Sending offer from ${userId}`);
-    socket.to(userId.id).emit("receive-offer", offer);
+  socket.on("send-offer", (to, from, offer) => {
+    console.log(`Sending offer from ${to.id}`);
+    socket.to(to.id).emit("receive-offer", offer, from);
   });
 
   // Receive and forward WebRTC answer

@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import UserContext from "../context/user/UserContext";
 import ChatContext from "../context/chat/ChatContext";
-
-const TextChat = ({ to, from }) => {
+const TextChat = ({ to, from, offer, iceCandidate }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
 
   const peerRef = useRef();
   const dataChannelRef = useRef();
+  const remoteAudioRef = useRef(null);
+  const localStreamRef = useRef(null);
 
   const userContext = useContext(UserContext);
   const { socket } = userContext;
@@ -15,28 +16,97 @@ const TextChat = ({ to, from }) => {
   const chatContext = useContext(ChatContext);
   const { ExitChat } = chatContext;
   useEffect(() => {
+    console.log(to, from, "to-from");
     // Initialize socket connection
-
-    createPeerConnection(to);
-
-    // Handle offer from other users
-    socket.on("receive-offer", async (offer) => {
+    if (!offer) {
+      createPeerConnection(to);
+    } else {
+      console.log("receive-offer-peer", offer);
       const peer = new RTCPeerConnection();
       peerRef.current = peer;
+
       console.log("peer.signalingState", peer.signalingState);
-      if (peer.signalingState === "stable") {
-        await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
-        const answer = await peer.createAnswer();
-        await peer.setLocalDescription(answer);
-        socket.emit("send-answer", to, answer);
+      // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      //   // localStreamRef.current = stream;
+      //   stream.getTracks().forEach((track) => {
+      //     console.log("local audio", track);
+      //     peer.addTrack(track, stream);
+      //   });
+      // });
 
-        createDataChannel(peer, false); // Create the data channel as the receiving peer
-      }
-    });
+      // peer.ontrack = (event) => {
+      //   console.log("Remote audio received");
+      //   remoteAudioRef.current.srcObject = event.streams[0];
+      //   remoteAudioRef.current.play();
+      // };
+
+      peer.ondatachannel = (event) => {
+        console.log("dataChannel", event.channel);
+        dataChannelRef.current = event.channel;
+        setupDataChannel(event.channel);
+      }; // Create the data channel as the receiving peer
+
+      peer.onicecandidate = (e) => {
+        if (e.candidate) {
+          console.log("ice-send", peerRef.current.localDescription);
+          socket.emit("send-candidate", to, e.candidate);
+        }
+      };
+
+      peer
+        .setRemoteDescription(new RTCSessionDescription(offer))
+        .then(() => peer.createAnswer())
+        .then((answer) => {
+          console.log("send-answer", answer);
+          peer.setLocalDescription(answer);
+          socket.emit("send-answer", to, answer);
+        })
+        .then(() => {
+          // 2. Apply any candidates that arrived early
+          iceCandidate.forEach((c) => {
+            console.log("ice-candidate", c);
+            peer.addIceCandidate(new RTCIceCandidate(c)).catch(console.error);
+          });
+        })
+        .catch((err) => {
+          console.error("Error handling SDP:", err);
+        });
+    }
+
+    // Handle offer from other users
+    // socket.on("receive-offer", async (offer) => {
+    //   const peer = new RTCPeerConnection();
+    //   peerRef.current = peer;
+    //   console.log("peer.signalingState", peer.signalingState);
+    //   if (peer.signalingState === "stable") {
+    //     createDataChannel(peer, false);
+    //     // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+    //     //   // localStreamRef.current = stream;
+    //     //   stream.getTracks().forEach((track) => {
+    //     //     console.log("local audio", track);
+    //     //     peer.addTrack(track, stream);
+    //     //   });
+    //     // });
+    //     // peer.ontrack = (event) => {
+    //     //   console.log("Remote audio received");
+    //     //   remoteAudioRef.current.srcObject = event.streams[0];
+    //     //   remoteAudioRef.current.play();
+    //     // };
+
+    //     await peer.setRemoteDescription(new RTCSessionDescription(offer));
+
+    //     const answer = await peer.createAnswer();
+    //     await peer.setLocalDescription(answer);
+    //     socket.emit("send-answer", to, answer);
+
+    //     // createDataChannel(peer, false); // Create the data channel as the receiving peer
+    //   }
+    // });
 
     // Handle answer from other users
     socket.on("receive-answer", (answer) => {
+      console.log("Received answer", answer, peerRef.current.signalingState);
       if (
         peerRef.current &&
         peerRef.current.signalingState === "have-local-offer"
@@ -52,12 +122,10 @@ const TextChat = ({ to, from }) => {
       peerRef.current.addIceCandidate(iceCandidate);
     });
 
-    return () => {
-      // Remove socket listeners
-      socket.off("receive-offer");
-      socket.off("receive-answer");
-      socket.off("receive-candidate");
-    };
+    // return () => {
+    //   // Remove socket listeners
+    //   socket.off("receive-answer");
+    // };
   }, [socket]);
 
   const handleExitChat = () => {
@@ -73,13 +141,27 @@ const TextChat = ({ to, from }) => {
     const peer = new RTCPeerConnection();
     peerRef.current = peer;
 
+    // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+    //   // localStreamRef.current = stream;
+    //   stream.getTracks().forEach((track) => {
+    //     console.log("local audio", track);
+    //     peer.addTrack(track, stream);
+    //   });
+    // });
+
+    // peer.ontrack = (event) => {
+    //   console.log("Remote audio received");
+    //   remoteAudioRef.current.srcObject = event.streams[0];
+    //   remoteAudioRef.current.play();
+    // };
+
     // Create the data channel on peer connection initiation
-    createDataChannel(peer, true);
+    createDataChannel(peer);
 
     // Handle ICE candidates
     peer.onicecandidate = (e) => {
       if (e.candidate) {
-        socket.emit("send-candidate", newUserId, e.candidate);
+        socket.emit("send-local-candidate", to, from, e.candidate);
         console.log(peerRef.current.localDescription);
       }
     };
@@ -87,30 +169,48 @@ const TextChat = ({ to, from }) => {
     // Create offer
     peer.createOffer().then((offer) => {
       peer.setLocalDescription(offer);
-      socket.emit("send-offer", newUserId, offer);
+      socket.emit("send-offer", to, from, offer);
       console.log("send-offer");
     });
   };
 
-  const createDataChannel = (peer, isInitiator) => {
-    let dataChannel;
-
-    if (isInitiator) {
-      // Create the data channel if initiating the peer connection
-      dataChannel = peer.createDataChannel("chat");
-      setupDataChannel(dataChannel);
-      dataChannelRef.current = dataChannel;
-      console.log("dataChannel", dataChannel);
-    } else {
-      // Receive the data channel on the other side
-      peer.ondatachannel = (event) => {
-        dataChannel = event.channel;
-        setupDataChannel(dataChannel);
-        dataChannelRef.current = dataChannel;
-        console.log("dataChannel", dataChannel);
-      };
-    }
+  const createDataChannel = (peer) => {
+    dataChannelRef.current = peer.createDataChannel("chat");
+    setupDataChannel(dataChannelRef.current);
+    console.log("dataChannel-create", dataChannelRef.current);
   };
+
+  // const createDataChannel = (peer, isInitiator) => {
+  //   let dataChannel;
+
+  //   dataChannel = peer.createDataChannel("chat");
+  //   setupDataChannel(dataChannel);
+  //   dataChannelRef.current = dataChannel;
+  //   console.log("dataChannel-create", dataChannel);
+
+  //   peer.ondatachannel = (event) => {
+  //     dataChannel = event.channel;
+  //     setupDataChannel(dataChannel);
+  //     dataChannelRef.current = dataChannel;
+  //     console.log("dataChannel-setup", dataChannel);
+  //   };
+
+  //   // if (isInitiator) {
+  //   //   // Create the data channel if initiating the peer connection
+  //   //   dataChannel = peer.createDataChannel("chat");
+  //   //   setupDataChannel(dataChannel);
+  //   //   dataChannelRef.current = dataChannel;
+  //   //   console.log("dataChannel-create", dataChannel);
+  //   // } else {
+  //   //   // Receive the data channel on the other side
+  //   //   peer.ondatachannel = (event) => {
+  //   //     dataChannel = event.channel;
+  //   //     setupDataChannel(dataChannel);
+  //   //     dataChannelRef.current = dataChannel;
+  //   //     console.log("dataChannel-setup", dataChannel);
+  //   //   };
+  //   // }
+  // };
 
   const setupDataChannel = (dataChannel) => {
     dataChannel.onopen = () => {
@@ -183,6 +283,9 @@ const TextChat = ({ to, from }) => {
         <button className="btn btn-primary mt-2" onClick={sendMessage}>
           Send
         </button>
+        <div>
+          <audio ref={remoteAudioRef} autoPlay controls className="mt-3" />
+        </div>
       </div>
     </div>
   );

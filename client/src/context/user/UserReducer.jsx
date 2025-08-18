@@ -31,6 +31,12 @@ const UserReducer = (state, action) => {
         dataChannel: action.payload,
       };
 
+    case "ADD_DATA_CHANNEL":
+      return {
+        ...state,
+        dataChannel: { ...state.dataChannel, ...action.payload },
+      };
+
     case "USER_ERROR":
       return {
         ...state,
