@@ -6,6 +6,8 @@ function UserAction(props) {
   const userInitial = {
     userName: "",
     socketId: "",
+    iceCandidates: {},
+    offers: {},
     peerConnection: {},
     dataChannel: {},
     socket: null,
@@ -173,6 +175,30 @@ function UserAction(props) {
       peer.addIceCandidate(iceCandidate);
     });
   };
+  const setIceCandidates = (from, candidate) => {
+    console.log("setIceCandidates", from, candidate);
+    dispatch({
+      type: "SET_ICE_CANDIDATE",
+      payload: { from, candidate },
+    });
+  };
+  const setOffers = (from, offer) => {
+    console.log("setOffers", from, offer);
+    dispatch({
+      type: "SET_OFFER",
+      payload: { from, offer },
+    });
+  };
+  const clearConnections = (from) => { 
+    dispatch({
+      type: "CLEAR_ICE_CANDIDATE",
+      payload: from.id,
+    });
+    dispatch({
+      type: "CLEAR_OFFER",
+      payload: from.id,
+    });
+  };
   return (
     <UserContext.Provider
       value={{
@@ -181,6 +207,8 @@ function UserAction(props) {
         peerConnection: state.peerConnection,
         dataChannel: state.dataChannel,
         socket: state.socket,
+        iceCandidates: state.iceCandidates,
+        offers: state.offers,
         error: state.error,
         socketConnection,
         createUser,
@@ -192,6 +220,9 @@ function UserAction(props) {
         receiveCandidate,
         setPeer,
         addDataChannel,
+        setIceCandidates,
+        setOffers,
+        clearConnections,
       }}
     >
       {props.children}

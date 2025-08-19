@@ -107,12 +107,20 @@ import ChatContext from "./context/chat/ChatContext";
 
 function App() {
   const [username, setUsername] = useState("");
-  const [iceCandidates, setIceCandidates] = useState({});
-  const [offers, setOffers] = useState({});
+  // const [iceCandidates, setIceCandidates] = useState({});
+  // const [offers, setOffers] = useState({});
   const socketRef = useRef();
   const userContext = useContext(UserContext);
-  const { socketConnection, handleRegister, userName, socketId, createUser } =
-    userContext;
+  const {
+    socketConnection,
+    handleRegister,
+    userName,
+    socketId,
+    iceCandidates,
+    offers,
+    setIceCandidates,
+    setOffers,
+  } = userContext;
   const chatContext = useContext(ChatContext);
   const {
     setOnlineUsers,
@@ -134,21 +142,24 @@ function App() {
     updateReceivedRequests(socket);
     socket.on("receive-offer", async (offer, from) => {
       console.log("receive-offer", offer, "from", from);
-      const newOffer = {};
-      newOffer[from.id] = offer;
-      const currentOffer = { ...newOffer, ...offers };
-      setOffers(currentOffer);
+      // const newOffer = {};
+      // newOffer[from.id] = offer;
+      // const currentOffer = { ...newOffer, ...offers };
+      // setOffers(currentOffer);]
+      setOffers(from, offer);
     });
     socket.on("receive-remote-candidate", (candidate, from) => {
       console.log("receive-candidate", candidate, "from", from);
 
-      setIceCandidates((prev) => {
-        const oldIceCandidates = prev[from.id] ? [...prev[from.id]] : [];
-        return {
-          ...prev,
-          [from.id]: [...oldIceCandidates, candidate],
-        };
-      });
+      // setIceCandidates((prev) => {
+      //   const oldIceCandidates = prev[from.id] ? [...prev[from.id]] : [];
+      //   return {
+      //     ...prev,
+      //     [from.id]: [...oldIceCandidates, candidate],
+      //   };
+      // });
+
+      setIceCandidates(from, candidate);
     });
   }, []);
 
@@ -205,7 +216,7 @@ function App() {
       ) : (
         <TextChat
           to={currentChat}
-          from={{ id: socketId, name: userName }} 
+          from={{ id: socketId, name: userName }}
           offer={offers[currentChat.id]}
           iceCandidate={iceCandidates[currentChat.id]}
         />

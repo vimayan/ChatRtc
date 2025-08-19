@@ -11,12 +11,12 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
   const localStreamRef = useRef(null);
 
   const userContext = useContext(UserContext);
-  const { socket } = userContext;
+  const { socket, clearConnections } = userContext;
 
   const chatContext = useContext(ChatContext);
   const { ExitChat } = chatContext;
   useEffect(() => {
-    console.log(to, from, "to-from");
+    console.log(to, from, offer, iceCandidate, "to-from");
     // Initialize socket connection
     if (!offer) {
       createPeerConnection(to);
@@ -132,10 +132,13 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
   }, [socket]);
 
   const handleExitChat = () => {
+ 
     if (peerRef.current) {
       peerRef.current.close(); // Close the peer connection
       peerRef.current = null; // Clear the reference
       console.log("closed connection");
+      clearConnections(to);
+         console.log("exit");
       ExitChat(to);
     }
   }; // Define han  dleExit
