@@ -155,26 +155,32 @@
 
 // export default AudioCall;
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import UserContext from "../context/user/UserContext";
 
-const AudioCall = ({ socket, from, to, onEndCall }) => {
+const AudioCall = ({ to, from, offer, iceCandidate }) => {
   const [micEnabled, setMicEnabled] = useState(true);
 
   const peerRef = useRef(null);
   const localStream = useRef(null);
   const remoteAudio = useRef(null);
 
-  useEffect(() => {
-    initCall();
+  const userContext = useContext(UserContext);
+  const { socket, clearConnections } = userContext;
 
-    socket.on("receive-offer", handleReceiveOffer);
+  useEffect(() => {
+    if (offer) {
+      handleReceiveOffer();
+    } else {
+      initCall();
+    }
+
     socket.on("receive-answer", handleReceiveAnswer);
     socket.on("receive-candidate", handleReceiveCandidate);
 
     return () => {
-      socket.off("receive-offer", handleReceiveOffer);
-      socket.off("receive-answer", handleReceiveAnswer);
-      socket.off("receive-candidate", handleReceiveCandidate);
+      socket.off("receive-answer");
+      socket.off("receive-candidate");
       endCall();
     };
   }, []);
@@ -194,22 +200,27 @@ const AudioCall = ({ socket, from, to, onEndCall }) => {
 
     peer.onicecandidate = (e) => {
       if (e.candidate) {
-        socket.emit("send-candidate", to, e.candidate);
+        socket.emit("send-local-candidate", to, e.candidate);
       }
     };
-
-    // Add local audio track(s)
-    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
     // Create & send offer
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
     socket.emit("send-offer", to, offer);
     console.log("send-offer");
+
+    // Add local audio track(s)
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+
+    peer.ontrack = (event) => {
+      console.log(remoteAudio.current, "remoteAudio");
+      return (remoteAudio.current.srcObject = event.streams[0]);
+    };
   };
 
   /** Callee: handle offer */
-  const handleReceiveOffer = async (offer) => {
+  const handleReceiveOffer = async () => {
     console.log("Received offer");
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -224,11 +235,21 @@ const AudioCall = ({ socket, from, to, onEndCall }) => {
       // Add local audio
       stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
+      peer.onicecandidate = (e) => {
+        if (e.candidate) {
+          socket.emit("send-candidate", to, e.candidate);
+        }
+      };
+
       await peer.setRemoteDescription(new RTCSessionDescription(offer));
 
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
       socket.emit("send-answer", to, answer);
+      peer.ontrack = (event) => {
+        console.log(remoteAudio.current, "remoteAudio");
+        return (remoteAudio.current.srcObject = event.streams[0]);
+      };
     }
   };
 
@@ -257,12 +278,6 @@ const AudioCall = ({ socket, from, to, onEndCall }) => {
   /** Peer setup (common for caller & callee) */
   const createPeer = () => {
     const peer = new RTCPeerConnection();
-
-    // peer.onicecandidate = (e) => {
-    //   if (e.candidate) {
-    //     socket.emit("send-candidate", to, e.candidate);
-    //   }
-    // };
 
     peer.ontrack = (event) => {
       console.log("Remote audio received");
@@ -305,7 +320,7 @@ const AudioCall = ({ socket, from, to, onEndCall }) => {
     if (remoteAudio.current) {
       remoteAudio.current.srcObject = null;
     }
-    onEndCall();
+    // onEndCall();
   };
 
   return (

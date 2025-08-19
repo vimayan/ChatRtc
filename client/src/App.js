@@ -3,6 +3,7 @@ import { io } from "socket.io-client";
 import TextChat from "./component/TextChat";
 import UserContext from "./context/user/UserContext";
 import ChatContext from "./context/chat/ChatContext";
+import AudioCall from "./component/AudioCall";
 
 function App() {
   const [username, setUsername] = useState("");
@@ -98,9 +99,15 @@ function App() {
           </ul>
         </div>
       ) : (
-        <TextChat
-          to={currentChat}
+        // <TextChat
+        //   to={currentChat}
+        //   from={{ id: socketId, name: userName }}
+        //   offer={offers[currentChat.id]}
+        //   iceCandidate={iceCandidates[currentChat.id]}
+        // />
+        <AudioCall 
           from={{ id: socketId, name: userName }}
+          to={currentChat}
           offer={offers[currentChat.id]}
           iceCandidate={iceCandidates[currentChat.id]}
         />

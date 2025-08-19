@@ -27,19 +27,19 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
 
       console.log("peer.signalingState", peerRef.current.signalingState);
 
-      // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      //   // localStreamRef.current = stream;
-      //   stream.getTracks().forEach((track) => {
-      //     console.log("local audio", track);
-      //     peer.addTrack(track, stream);
-      //   });
-      // });
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        // localStreamRef.current = stream;
+        stream.getTracks().forEach((track) => {
+          console.log("local audio", track);
+          peer.addTrack(track, stream);
+        });
+      });
 
-      // peer.ontrack = (event) => {
-      //   console.log("Remote audio received");
-      //   remoteAudioRef.current.srcObject = event.streams[0];
-      //   remoteAudioRef.current.play();
-      // };
+      peer.ontrack = (event) => {
+        console.log("Remote audio received");
+        remoteAudioRef.current.srcObject = event.streams[0];
+        remoteAudioRef.current.play();
+      };
 
       peerRef.current.ondatachannel = (event) => {
         console.log("dataChannel", event.channel);
