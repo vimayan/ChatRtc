@@ -4,111 +4,8 @@ import TextChat from "./component/TextChat";
 import UserContext from "./context/user/UserContext";
 import ChatContext from "./context/chat/ChatContext";
 
-// function App() {
-//   const [username, setUsername] = useState("");
-//   const [iceCandidates, setIceCandidates] = useState({});
-//   const [offers, setOffers] = useState({});
-//   const socketRef = useRef();
-//   const userContext = useContext(UserContext);
-//   const { socketConnection, handleRegister, userName, socketId, createUser } =
-//     userContext;
-//   const chatContext = useContext(ChatContext);
-//   const {
-//     setOnlineUsers,
-//     onlineUsers,
-//     setCurrentChat,
-//     currentChat,
-//     chatRequests,
-//     createChatrequest,
-//     addReceivedRequests,
-//     updateReceivedRequests,
-//   } = chatContext;
-
-//   useEffect(() => {
-//     const socket = io("http://10.115.201.89:5000");
-//     socketRef.current = socket;
-//     socketConnection(socket);
-//     setOnlineUsers(socket);
-//     addReceivedRequests(socket);
-//     updateReceivedRequests(socket);
-//     socket.on("receive-offer", async (offer, from) => {
-//       console.log("receive-offer", offer);
-//       const newOffer = {};
-//       const oldOffer = offer[from.id] ? [...offer[from.id]] : [];
-//       newOffer[from.id] = [...oldOffer, offer];
-//       const currentOffer = { ...newOffer, ...offers };
-//       setOffers(currentOffer);
-//     });
-//     socket.on("receive-remote-candidate", (candidate, from) => {
-//       console.log("receive-candidate", candidate);
-//       const newIceCandidate = {};
-//       newIceCandidate[from.id] = candidate;
-//       const currentIceCandidate = { ...newIceCandidate, ...candidate };
-//       setIceCandidates(currentIceCandidate);
-//     });
-//   }, []);
-
-//   return (
-//     <div className="container mt-5">
-//       {!currentChat ? (
-//         <div className="text-center">
-//           <h3>Welcome to Simple Chat</h3>
-//           <input
-//             className="form-control my-3"
-//             placeholder="Enter your name"
-//             onChange={(e) =>
-//               setUsername(e.target.value + Math.floor(Math.random() * 100))
-//             }
-//           />
-//           <button
-//             className="btn btn-primary mb-3"
-//             onClick={() => handleRegister(username)}
-//           >
-//             Join
-//           </button>
-//           <h5>Online Users</h5>
-//           <ul className="list-group">
-//             {onlineUsers.map((user) => (
-//               <li
-//                 key={user.id}
-//                 className="list-group-item d-flex justify-content-between"
-//               >
-//                 {user.name}
-//                 {chatRequests.includes(user.id) ? (
-//                   <button
-//                     className="btn btn-sm btn-outline-success"
-//                     onClick={() => setCurrentChat(user)}
-//                   >
-//                     accept
-//                   </button>
-//                 ) : (
-//                   <button
-//                     className="btn btn-sm btn-outline-success"
-//                     onClick={() => createChatrequest(user, socketRef.current)}
-//                   >
-//                     Chat
-//                   </button>
-//                 )}
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-//       ) : (
-//         <TextChat
-//           to={currentChat}
-//           from={{ name: userName, id: socketId }}
-//           offer={offers[currentChat.id]}
-//           iceCandidate={iceCandidates[currentChat.id]}
-//         />
-//       )}
-//     </div>
-//   );
-// }
-
 function App() {
   const [username, setUsername] = useState("");
-  // const [iceCandidates, setIceCandidates] = useState({});
-  // const [offers, setOffers] = useState({});
   const socketRef = useRef();
   const userContext = useContext(UserContext);
   const {
@@ -142,23 +39,10 @@ function App() {
     updateReceivedRequests(socket);
     socket.on("receive-offer", async (offer, from) => {
       console.log("receive-offer", offer, "from", from);
-      // const newOffer = {};
-      // newOffer[from.id] = offer;
-      // const currentOffer = { ...newOffer, ...offers };
-      // setOffers(currentOffer);]
       setOffers(from, offer);
     });
     socket.on("receive-remote-candidate", (candidate, from) => {
       console.log("receive-candidate", candidate, "from", from);
-
-      // setIceCandidates((prev) => {
-      //   const oldIceCandidates = prev[from.id] ? [...prev[from.id]] : [];
-      //   return {
-      //     ...prev,
-      //     [from.id]: [...oldIceCandidates, candidate],
-      //   };
-      // });
-
       setIceCandidates(from, candidate);
     });
   }, []);

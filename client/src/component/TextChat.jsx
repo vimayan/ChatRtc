@@ -76,36 +76,6 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
         });
     }
 
-    // Handle offer from other users
-    // socket.on("receive-offer", async (offer) => {
-    //   const peer = new RTCPeerConnection();
-    //   peerRef.current = peer;
-    //   console.log("peer.signalingState", peer.signalingState);
-    //   if (peer.signalingState === "stable") {
-    //     createDataChannel(peer, false);
-    //     // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-    //     //   // localStreamRef.current = stream;
-    //     //   stream.getTracks().forEach((track) => {
-    //     //     console.log("local audio", track);
-    //     //     peer.addTrack(track, stream);
-    //     //   });
-    //     // });
-    //     // peer.ontrack = (event) => {
-    //     //   console.log("Remote audio received");
-    //     //   remoteAudioRef.current.srcObject = event.streams[0];
-    //     //   remoteAudioRef.current.play();
-    //     // };
-
-    //     await peer.setRemoteDescription(new RTCSessionDescription(offer));
-
-    //     const answer = await peer.createAnswer();
-    //     await peer.setLocalDescription(answer);
-    //     socket.emit("send-answer", to, answer);
-
-    //     // createDataChannel(peer, false); // Create the data channel as the receiving peer
-    //   }
-    // });
-
     // Handle answer from other users
     socket.on("receive-answer", (answer) => {
       console.log("Received answer", answer, peerRef.current.signalingState);
@@ -132,13 +102,12 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
   }, [socket]);
 
   const handleExitChat = () => {
- 
     if (peerRef.current) {
       peerRef.current.close(); // Close the peer connection
       peerRef.current = null; // Clear the reference
       console.log("closed connection");
       clearConnections(to);
-         console.log("exit");
+      console.log("exit");
       ExitChat(to);
     }
   }; // Define han  dleExit
@@ -185,38 +154,6 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
     setupDataChannel(dataChannelRef.current);
     console.log("dataChannel-create", dataChannelRef.current);
   };
-
-  // const createDataChannel = (peer, isInitiator) => {
-  //   let dataChannel;
-
-  //   dataChannel = peer.createDataChannel("chat");
-  //   setupDataChannel(dataChannel);
-  //   dataChannelRef.current = dataChannel;
-  //   console.log("dataChannel-create", dataChannel);
-
-  //   peer.ondatachannel = (event) => {
-  //     dataChannel = event.channel;
-  //     setupDataChannel(dataChannel);
-  //     dataChannelRef.current = dataChannel;
-  //     console.log("dataChannel-setup", dataChannel);
-  //   };
-
-  //   // if (isInitiator) {
-  //   //   // Create the data channel if initiating the peer connection
-  //   //   dataChannel = peer.createDataChannel("chat");
-  //   //   setupDataChannel(dataChannel);
-  //   //   dataChannelRef.current = dataChannel;
-  //   //   console.log("dataChannel-create", dataChannel);
-  //   // } else {
-  //   //   // Receive the data channel on the other side
-  //   //   peer.ondatachannel = (event) => {
-  //   //     dataChannel = event.channel;
-  //   //     setupDataChannel(dataChannel);
-  //   //     dataChannelRef.current = dataChannel;
-  //   //     console.log("dataChannel-setup", dataChannel);
-  //   //   };
-  //   // }
-  // };
 
   const setupDataChannel = (dataChannel) => {
     dataChannel.onopen = () => {

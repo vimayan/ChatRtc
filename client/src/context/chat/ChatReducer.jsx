@@ -1,5 +1,3 @@
-import { act } from "react";
-
 const ChatReducer = (state, action) => {
   switch (action.type) {
     case "SET_LIVE_USERS":
