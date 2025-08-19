@@ -124,10 +124,11 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
       peerRef.current.addIceCandidate(iceCandidate);
     });
 
-    // return () => {
-    //   // Remove socket listeners
-    //   socket.off("receive-answer");
-    // };
+    return () => {
+      // Remove socket listeners
+      socket.off("receive-answer");
+      socket.off("receive-candidate");
+    };
   }, [socket]);
 
   const handleExitChat = () => {
