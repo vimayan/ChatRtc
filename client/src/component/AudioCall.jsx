@@ -198,25 +198,26 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
     const peer = createPeer();
     peerRef.current = peer;
 
+    peer.ontrack = (event) => {
+      console.log("Remote audio received");
+      remoteAudio.current.srcObject = event.streams[0];
+      remoteAudio.current.play();
+    };
+
+    // Add local audio track(s)
+    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+
     peer.onicecandidate = (e) => {
       if (e.candidate) {
-        socket.emit("send-local-candidate", to, e.candidate);
+        socket.emit("send-local-candidate", to, from, e.candidate);
       }
     };
 
     // Create & send offer
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
-    socket.emit("send-offer", to, offer);
+    socket.emit("send-offer", to, from, offer);
     console.log("send-offer");
-
-    // Add local audio track(s)
-    stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-
-    peer.ontrack = (event) => {
-      console.log(remoteAudio.current, "remoteAudio");
-      return (remoteAudio.current.srcObject = event.streams[0]);
-    };
   };
 
   /** Callee: handle offer */
@@ -235,21 +236,38 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
       // Add local audio
       stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
+      peer.ontrack = (event) => {
+        console.log("Remote audio received");
+        remoteAudio.current.srcObject = event.streams[0];
+        remoteAudio.current.play();
+      };
+
       peer.onicecandidate = (e) => {
         if (e.candidate) {
           socket.emit("send-candidate", to, e.candidate);
         }
       };
 
-      await peer.setRemoteDescription(new RTCSessionDescription(offer));
-
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
-      socket.emit("send-answer", to, answer);
-      peer.ontrack = (event) => {
-        console.log(remoteAudio.current, "remoteAudio");
-        return (remoteAudio.current.srcObject = event.streams[0]);
-      };
+     peerRef.current
+        .setRemoteDescription(new RTCSessionDescription(offer))
+        .then(() => peerRef.current.createAnswer())
+        .then((answer) => {
+          console.log("send-answer", answer);
+          peerRef.current.setLocalDescription(answer);
+          socket.emit("send-answer", to, answer);
+        })
+        .then(() => {
+          // 2. Apply any candidates that arrived early
+          iceCandidate.forEach((c) => {
+            console.log("ice-candidate", c);
+            peerRef.current
+              .addIceCandidate(new RTCIceCandidate(c))
+              .catch(console.error);
+          });
+        })
+        .catch((err) => {
+          console.error("Error handling SDP:", err);
+        });
     }
   };
 
@@ -279,11 +297,11 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
   const createPeer = () => {
     const peer = new RTCPeerConnection();
 
-    peer.ontrack = (event) => {
-      console.log("Remote audio received");
-      remoteAudio.current.srcObject = event.streams[0];
-      remoteAudio.current.play();
-    };
+    // peer.ontrack = (event) => {
+    //   console.log("Remote audio received");
+    //   remoteAudio.current.srcObject = event.streams[0];
+    //   remoteAudio.current.play();
+    // };
 
     // Debugging
     peer.onsignalingstatechange = () => {
