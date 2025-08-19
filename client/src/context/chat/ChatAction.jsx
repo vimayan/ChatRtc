@@ -32,20 +32,18 @@ function ChatAction(props) {
   const addReceivedRequests = async (socket) => {
     socket.on("receive-request", (newUserId) => {
       console.log(`Received Request: ${newUserId}`);
-      const userList = [...state.chatRequests];
       dispatch({
         type: "RECEIVED_CHAT_REQUEST",
-        payload: [...userList, newUserId],
+        payload: newUserId,
       });
     });
   };
   const updateReceivedRequests = async (socket) => {
     socket.on("cancelled-request", (cancelledUser) => {
       console.log(`Request Cancelled: ${cancelledUser}`);
-      const userList = state.chatRequests.filter((u) => u !== cancelledUser);
       dispatch({
-        type: "RECEIVED_CHAT_REQUEST",
-        payload: userList,
+        type: "REMOVE_CHAT_REQUEST",
+        payload: cancelledUser,
       });
     });
   };
@@ -56,10 +54,9 @@ function ChatAction(props) {
   };
   const ExitChat = (to) => {
     setCurrentChat(null);
-    const userList = state.chatRequests.filter((u) => u !== to.id);
     dispatch({
-      type: "RECEIVED_CHAT_REQUEST",
-      payload: userList,
+      type: "REMOVE_CHAT_REQUEST",
+      payload: to.id,
     });
   };
 

@@ -1,3 +1,5 @@
+import { act } from "react";
+
 const ChatReducer = (state, action) => {
   switch (action.type) {
     case "SET_LIVE_USERS":
@@ -15,7 +17,13 @@ const ChatReducer = (state, action) => {
     case "RECEIVED_CHAT_REQUEST":
       return {
         ...state,
-        chatRequests: action.payload,
+        chatRequests: [action.payload, ...state.chatRequests],
+      };
+
+    case "REMOVE_CHAT_REQUEST":
+      return {
+        ...state,
+        chatRequests: state.chatRequests.filter((u) => u !== action.payload),
       };
 
     case "CHAT_ERROR":

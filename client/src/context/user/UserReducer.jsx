@@ -54,7 +54,7 @@ const UserReducer = (state, action) => {
       delete updatedIceCandidates[action.payload];
       return {
         ...state,
-        iceCandidates: {},
+        iceCandidates: updatedIceCandidates,
       };
 
     case "SET_OFFER":
@@ -71,7 +71,7 @@ const UserReducer = (state, action) => {
       delete updatedOffers[action.payload];
       return {
         ...state,
-        offers: {},
+        offers: updatedOffers,
       };
 
     case "USER_ERROR":
