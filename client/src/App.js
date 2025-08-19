@@ -126,7 +126,7 @@ function App() {
   } = chatContext;
 
   useEffect(() => {
-    const socket = io("http://10.115.201.89:5000");
+    const socket = io("http://localhost:5000");
     socketRef.current = socket;
     socketConnection(socket);
     setOnlineUsers(socket);
@@ -163,6 +163,11 @@ function App() {
             onChange={(e) =>
               setUsername(e.target.value + Math.floor(Math.random() * 100))
             }
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.keyCode === 13) {
+                handleRegister(username);
+              }
+            }}
           />
           <button
             className="btn btn-primary mb-3"

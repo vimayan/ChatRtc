@@ -25,7 +25,7 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
       const peer = new RTCPeerConnection();
       peerRef.current = peer;
 
-      console.log("peer.signalingState", peer.signalingState);
+      console.log("peer.signalingState", peerRef.current.signalingState);
 
       // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
       //   // localStreamRef.current = stream;
@@ -41,32 +41,34 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
       //   remoteAudioRef.current.play();
       // };
 
-      peer.ondatachannel = (event) => {
+      peerRef.current.ondatachannel = (event) => {
         console.log("dataChannel", event.channel);
         dataChannelRef.current = event.channel;
         setupDataChannel(event.channel);
       }; // Create the data channel as the receiving peer
 
-      peer.onicecandidate = (e) => {
+      peerRef.current.onicecandidate = (e) => {
         if (e.candidate) {
           console.log("ice-send", peerRef.current.localDescription);
           socket.emit("send-candidate", to, e.candidate);
         }
       };
 
-      peer
+      peerRef.current
         .setRemoteDescription(new RTCSessionDescription(offer))
-        .then(() => peer.createAnswer())
+        .then(() => peerRef.current.createAnswer())
         .then((answer) => {
           console.log("send-answer", answer);
-          peer.setLocalDescription(answer);
+          peerRef.current.setLocalDescription(answer);
           socket.emit("send-answer", to, answer);
         })
         .then(() => {
           // 2. Apply any candidates that arrived early
           iceCandidate.forEach((c) => {
             console.log("ice-candidate", c);
-            peer.addIceCandidate(new RTCIceCandidate(c)).catch(console.error);
+            peerRef.current
+              .addIceCandidate(new RTCIceCandidate(c))
+              .catch(console.error);
           });
         })
         .catch((err) => {
@@ -156,10 +158,10 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
     // };
 
     // Create the data channel on peer connection initiation
-    createDataChannel(peer);
+    createDataChannel();
 
     // Handle ICE candidates
-    peer.onicecandidate = (e) => {
+    peerRef.current.onicecandidate = (e) => {
       if (e.candidate) {
         socket.emit("send-local-candidate", to, from, e.candidate);
         console.log(peerRef.current.localDescription);
@@ -167,15 +169,15 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
     };
 
     // Create offer
-    peer.createOffer().then((offer) => {
-      peer.setLocalDescription(offer);
+    peerRef.current.createOffer().then((offer) => {
+      peerRef.current.setLocalDescription(offer);
       socket.emit("send-offer", to, from, offer);
       console.log("send-offer");
     });
   };
 
-  const createDataChannel = (peer) => {
-    dataChannelRef.current = peer.createDataChannel("chat");
+  const createDataChannel = () => {
+    dataChannelRef.current = peerRef.current.createDataChannel("chat");
     setupDataChannel(dataChannelRef.current);
     console.log("dataChannel-create", dataChannelRef.current);
   };
