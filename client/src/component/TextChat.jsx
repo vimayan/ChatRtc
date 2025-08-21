@@ -17,7 +17,8 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
   const { ExitChat, clearChatConnections } = chatContext;
 
   const audioContext = useContext(AudioContext);
-  const { audioIceCandidates, audioOffers } = audioContext;
+  const { audioIceCandidates, audioOffers, clearAudioConnections } =
+    audioContext;
 
   useEffect(() => {
     console.log(to, from, offer, iceCandidate, "to-from");
@@ -84,6 +85,10 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
       peerRef.current.addIceCandidate(iceCandidate);
     });
 
+    socket.on("exit-audio-chat", (from) => {
+      clearAudioConnections(from);
+      setShowAudioCall(false);
+    });
     return () => {
       // Remove socket listeners
       socket.off("receive-answer");

@@ -110,8 +110,8 @@ io.on("connection", (socket) => {
     console.log("Sending answer");
     socket.to(userId.id).emit("receive-audio-answer", answer);
   });
-  socket.on("exit-audio-chat", (userId, user) => {
-    socket.to(userId.id).emit("cancelled-audio-request", user);
+  socket.on("end-audio-call", (to, from) => {
+    socket.to(to.id).emit("exit-audio-chat", from);
   });
   socket.on("disconnect", () => {
     delete onlineUsers[socket.id];

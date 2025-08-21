@@ -18,24 +18,24 @@ function AudioAction(props) {
       payload: user,
     });
   };
-  const addAudioReceivedRequests = async (socket) => {
-    socket.on("receive-audio-chat-request", (newUserId) => {
-      console.log(`Received Request: ${newUserId}`);
-      dispatch({
-        type: "RECEIVED_AUDIO_CHAT_REQUEST",
-        payload: newUserId,
-      });
-    });
-  };
-  const updateAudioReceivedRequests = async (socket) => {
-    socket.on("cancelled-audio-chat-request", (cancelledUser) => {
-      console.log(`Request Cancelled: ${cancelledUser}`);
-      dispatch({
-        type: "REMOVE_CHAT_REQUEST",
-        payload: cancelledUser,
-      });
-    });
-  };
+  // const addAudioReceivedRequests = async (socket) => {
+  //   socket.on("receive-audio-chat-request", (newUserId) => {
+  //     console.log(`Received Request: ${newUserId}`);
+  //     dispatch({
+  //       type: "RECEIVED_AUDIO_CHAT_REQUEST",
+  //       payload: newUserId,
+  //     });
+  //   });
+  // };
+  // const updateAudioReceivedRequests = async (socket) => {
+  //   socket.on("cancelled-audio-chat-request", (cancelledUser) => {
+  //     console.log(`Request Cancelled: ${cancelledUser}`);
+  //     dispatch({
+  //       type: "REMOVE_CHAT_REQUEST",
+  //       payload: cancelledUser,
+  //     });
+  //   });
+  // };
   const createAudioChatrequest = (newUser, socket) => {
     console.log("createChatrequest", newUser);
     socket.emit("audio-chat-user", socket.id, newUser.id);
@@ -81,8 +81,8 @@ function AudioAction(props) {
         audioOffers: useState.audioOffers,
         audioChatError: useState.audioChatError,
         setCurrentAudioChat,
-        addAudioReceivedRequests,
-        updateAudioReceivedRequests,
+        // addAudioReceivedRequests,
+        // updateAudioReceivedRequests,
         createAudioChatrequest,
         exitAudioChat,
         setAudioOffers,

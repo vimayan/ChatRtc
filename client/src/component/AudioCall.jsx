@@ -337,6 +337,7 @@ const AudioCall = ({ to, from, offer, iceCandidate, onEndCall }) => {
       remoteAudio.current.srcObject = null;
     }
     clearAudioConnections(to);
+    socket.emit("end-audio-call", to, from);
     onEndCall();
   };
 
