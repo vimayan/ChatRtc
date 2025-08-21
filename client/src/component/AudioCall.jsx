@@ -166,7 +166,10 @@ const AudioCall = ({ to, from, offer, iceCandidate, onEndCall }) => {
   const remoteAudio = useRef(null);
 
   const userContext = useContext(UserContext);
-  const { socket, clearAudioConnections } = userContext;
+  const { socket } = userContext;
+
+  const audioContext = useContext(AudioContext);
+  const { clearAudioConnections } = audioContext;
 
   useEffect(() => {
     if (offer) {

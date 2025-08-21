@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import UserContext from "../context/user/UserContext";
 import ChatContext from "../context/chat/ChatContext";
 import AudioCall from "./AudioCall";
+import AudioContext from "../context/audio/AudioContext";
 const TextChat = ({ to, from, offer, iceCandidate }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
@@ -223,14 +224,6 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
                 Start Audio Call
               </button>
             )}
-            <button
-              className={
-                showAudioCall ? "d-none" : "btn btn-warning btn-sm me-2"
-              }
-              onClick={() => setShowAudioCall(!showAudioCall)}
-            >
-              Start Audio Call
-            </button>
           </div>
         </div>
       ) : (
