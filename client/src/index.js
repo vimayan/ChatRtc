@@ -7,12 +7,15 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap";
 import UserAction from "./context/user/UserAction";
 import ChatAction from "./context/chat/ChatAction";
+import AudioAction from "./context/audio/AudioAction";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <UserAction>
     <ChatAction>
-      <App />
+      <AudioAction>
+        <App />
+      </AudioAction>
     </ChatAction>
   </UserAction>
 );

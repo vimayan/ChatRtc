@@ -78,6 +78,41 @@ io.on("connection", (socket) => {
     socket.to(userId.id).emit("cancelled-request", user);
   });
 
+  //AUDIO CHAT
+  // Handle initial users list
+  socket.on("audio-chat-user", (from, to) => {
+    console.log(from, to, "audio-chat-user");
+    socket.broadcast.to(to).emit("receive-audio-request", from);
+    // if (from === to) {
+    //   return;
+    // } else if (!onlineUsers[from] || !onlineUsers[to]) {
+    //   return;
+    // } else {
+    //   socket.broadcast.emit("user-connected", to);
+    // }
+  });
+  socket.on("send-audio-local-candidate", (to, from, candidate) => {
+    console.log(`Sending local ICE candidate to ${from.name}`);
+    socket.to(to.id).emit("receive-audio-remote-candidate", candidate, from);
+  });
+  // Receive and forward ICE candidates
+  socket.on("send-audio-candidate", (user, candidate) => {
+    console.log(`Sending ICE candidate to ${user.name}`);
+    socket.to(user.id).emit("receive-audio-candidate", candidate);
+  });
+  // Receive and forward WebRTC offer
+  socket.on("send-audio-offer", (to, from, offer) => {
+    console.log(`Sending offer from ${to.id}`);
+    socket.to(to.id).emit("receive-audio-offer", offer, from);
+  });
+  // Receive and forward WebRTC answer
+  socket.on("send-audio-answer", (userId, answer) => {
+    console.log("Sending answer");
+    socket.to(userId.id).emit("receive-audio-answer", answer);
+  });
+  socket.on("exit-audio-chat", (userId, user) => {
+    socket.to(userId.id).emit("cancelled-audio-request", user);
+  });
   socket.on("disconnect", () => {
     delete onlineUsers[socket.id];
     io.emit(

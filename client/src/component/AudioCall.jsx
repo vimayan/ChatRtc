@@ -158,7 +158,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import UserContext from "../context/user/UserContext";
 
-const AudioCall = ({ to, from, offer, iceCandidate }) => {
+const AudioCall = ({ to, from, offer, iceCandidate, onEndCall }) => {
   const [micEnabled, setMicEnabled] = useState(true);
 
   const peerRef = useRef(null);
@@ -166,7 +166,7 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
   const remoteAudio = useRef(null);
 
   const userContext = useContext(UserContext);
-  const { socket, clearConnections } = userContext;
+  const { socket, clearAudioConnections } = userContext;
 
   useEffect(() => {
     if (offer) {
@@ -175,12 +175,12 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
       initCall();
     }
 
-    socket.on("receive-answer", handleReceiveAnswer);
-    socket.on("receive-candidate", handleReceiveCandidate);
+    socket.on("receive-audio-answer", handleReceiveAnswer);
+    socket.on("receive-audio-candidate", handleReceiveCandidate);
 
     return () => {
-      socket.off("receive-answer");
-      socket.off("receive-candidate");
+      socket.off("receive-audio-answer");
+      socket.off("receive-audio-candidate");
       endCall();
     };
   }, []);
@@ -209,15 +209,15 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
 
     peer.onicecandidate = (e) => {
       if (e.candidate) {
-        socket.emit("send-local-candidate", to, from, e.candidate);
+        socket.emit("send-audio-local-candidate", to, from, e.candidate);
       }
     };
 
     // Create & send offer
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
-    socket.emit("send-offer", to, from, offer);
-    console.log("send-offer");
+    socket.emit("send-audio-offer", to, from, offer);
+    console.log("send-audio-offer");
   };
 
   /** Callee: handle offer */
@@ -244,22 +244,22 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
 
       peer.onicecandidate = (e) => {
         if (e.candidate) {
-          socket.emit("send-candidate", to, e.candidate);
+          socket.emit("send-audio-candidate", to, e.candidate);
         }
       };
 
-     peerRef.current
+      peerRef.current
         .setRemoteDescription(new RTCSessionDescription(offer))
         .then(() => peerRef.current.createAnswer())
         .then((answer) => {
-          console.log("send-answer", answer);
+          console.log("send-audio-answer", answer);
           peerRef.current.setLocalDescription(answer);
-          socket.emit("send-answer", to, answer);
+          socket.emit("send-audio-answer", to, answer);
         })
         .then(() => {
           // 2. Apply any candidates that arrived early
           iceCandidate.forEach((c) => {
-            console.log("ice-candidate", c);
+            console.log("ice-audio-candidate", c);
             peerRef.current
               .addIceCandidate(new RTCIceCandidate(c))
               .catch(console.error);
@@ -286,7 +286,7 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
 
   /** Both: handle ICE candidates */
   const handleReceiveCandidate = (candidate) => {
-    console.log("receive-candidate", candidate);
+    console.log("receive-audio-candidate", candidate);
     if (peerRef.current) {
       const iceCandidate = new RTCIceCandidate(candidate);
       peerRef.current.addIceCandidate(iceCandidate);
@@ -296,12 +296,6 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
   /** Peer setup (common for caller & callee) */
   const createPeer = () => {
     const peer = new RTCPeerConnection();
-
-    // peer.ontrack = (event) => {
-    //   console.log("Remote audio received");
-    //   remoteAudio.current.srcObject = event.streams[0];
-    //   remoteAudio.current.play();
-    // };
 
     // Debugging
     peer.onsignalingstatechange = () => {
@@ -338,13 +332,12 @@ const AudioCall = ({ to, from, offer, iceCandidate }) => {
     if (remoteAudio.current) {
       remoteAudio.current.srcObject = null;
     }
-    // onEndCall();
+    clearAudioConnections(to);
+    onEndCall();
   };
 
   return (
     <div className="card mt-4 p-4 text-center">
-      <h5>Audio Call with {to.name}</h5>
-
       <div className="mt-3">
         <button
           className={`btn btn-${micEnabled ? "warning" : "secondary"} me-2`}

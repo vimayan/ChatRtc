@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 import TextChat from "./component/TextChat";
 import UserContext from "./context/user/UserContext";
 import ChatContext from "./context/chat/ChatContext";
-import AudioCall from "./component/AudioCall";
+import AudioContext from "./context/audio/AudioContext";
 
 function App() {
   const [username, setUsername] = useState("");
@@ -11,25 +11,27 @@ function App() {
   const userContext = useContext(UserContext);
   const {
     socketConnection,
+    setOnlineUsers,
+    onlineUsers,
     handleRegister,
     userName,
     socketId,
-    iceCandidates,
-    offers,
-    setIceCandidates,
-    setOffers,
   } = userContext;
   const chatContext = useContext(ChatContext);
   const {
-    setOnlineUsers,
-    onlineUsers,
     setCurrentChat,
     currentChat,
     chatRequests,
     createChatrequest,
     addReceivedRequests,
     updateReceivedRequests,
+    chatIceCandidates,
+    chatOffers,
+    setChatIceCandidates,
+    setChatOffers,
   } = chatContext;
+  const audioContext = useContext(AudioContext);
+  const { setAudioIceCandidates, setAudioOffers } = audioContext;
 
   useEffect(() => {
     const socket = io("http://localhost:5000");
@@ -40,11 +42,20 @@ function App() {
     updateReceivedRequests(socket);
     socket.on("receive-offer", async (offer, from) => {
       console.log("receive-offer", offer, "from", from);
-      setOffers(from, offer);
+      setChatOffers(from, offer);
     });
     socket.on("receive-remote-candidate", (candidate, from) => {
       console.log("receive-candidate", candidate, "from", from);
-      setIceCandidates(from, candidate);
+      setChatIceCandidates(from, candidate);
+    });
+
+    socket.on("receive-audio-offer", async (offer, from) => {
+      console.log("receive-offer", offer, "from", from);
+      setAudioOffers(from, offer);
+    });
+    socket.on("receive-audio-remote-candidate", (candidate, from) => {
+      console.log("receive-candidate", candidate, "from", from);
+      setAudioIceCandidates(from, candidate);
     });
   }, []);
 
@@ -99,18 +110,18 @@ function App() {
           </ul>
         </div>
       ) : (
-        // <TextChat
-        //   to={currentChat}
+        <TextChat
+          to={currentChat}
+          from={{ id: socketId, name: userName }}
+          offer={chatOffers[currentChat.id]}
+          iceCandidate={chatIceCandidates[currentChat.id]}
+        />
+        // <AudioCall
         //   from={{ id: socketId, name: userName }}
+        //   to={currentChat}
         //   offer={offers[currentChat.id]}
         //   iceCandidate={iceCandidates[currentChat.id]}
         // />
-        <AudioCall 
-          from={{ id: socketId, name: userName }}
-          to={currentChat}
-          offer={offers[currentChat.id]}
-          iceCandidate={iceCandidates[currentChat.id]}
-        />
       )}
     </div>
   );

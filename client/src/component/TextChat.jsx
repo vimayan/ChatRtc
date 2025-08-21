@@ -1,20 +1,23 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import UserContext from "../context/user/UserContext";
 import ChatContext from "../context/chat/ChatContext";
+import AudioCall from "./AudioCall";
 const TextChat = ({ to, from, offer, iceCandidate }) => {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
-
+  const [showAudioCall, setShowAudioCall] = useState(false);
   const peerRef = useRef();
   const dataChannelRef = useRef();
-  const remoteAudioRef = useRef(null);
-  const localStreamRef = useRef(null);
 
   const userContext = useContext(UserContext);
-  const { socket, clearConnections } = userContext;
+  const { socket } = userContext;
 
   const chatContext = useContext(ChatContext);
-  const { ExitChat } = chatContext;
+  const { ExitChat, clearChatConnections } = chatContext;
+
+  const audioContext = useContext(AudioContext);
+  const { audioIceCandidates, audioOffers } = audioContext;
+
   useEffect(() => {
     console.log(to, from, offer, iceCandidate, "to-from");
     // Initialize socket connection
@@ -26,20 +29,6 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
       peerRef.current = peer;
 
       console.log("peer.signalingState", peerRef.current.signalingState);
-
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        // localStreamRef.current = stream;
-        stream.getTracks().forEach((track) => {
-          console.log("local audio", track);
-          peer.addTrack(track, stream);
-        });
-      });
-
-      peer.ontrack = (event) => {
-        console.log("Remote audio received");
-        remoteAudioRef.current.srcObject = event.streams[0];
-        remoteAudioRef.current.play();
-      };
 
       peerRef.current.ondatachannel = (event) => {
         console.log("dataChannel", event.channel);
@@ -106,8 +95,7 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
       peerRef.current.close(); // Close the peer connection
       peerRef.current = null; // Clear the reference
       console.log("closed connection");
-      clearConnections(to);
-      console.log("exit");
+      clearChatConnections(to);
       ExitChat(to);
     }
   }; // Define han  dleExit
@@ -115,20 +103,6 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
   const createPeerConnection = (newUserId) => {
     const peer = new RTCPeerConnection();
     peerRef.current = peer;
-
-    // navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-    //   // localStreamRef.current = stream;
-    //   stream.getTracks().forEach((track) => {
-    //     console.log("local audio", track);
-    //     peer.addTrack(track, stream);
-    //   });
-    // });
-
-    // peer.ontrack = (event) => {
-    //   console.log("Remote audio received");
-    //   remoteAudioRef.current.srcObject = event.streams[0];
-    //   remoteAudioRef.current.play();
-    // };
 
     // Create the data channel on peer connection initiation
     createDataChannel();
@@ -200,36 +174,77 @@ const TextChat = ({ to, from, offer, iceCandidate }) => {
           Back
         </button>
       </div>
-      <div className="card-body">
-        <div
-          style={{
-            border: "1px solid black",
-            padding: "10px",
-            width: "300px",
-            height: "200px",
-            overflowY: "scroll",
-          }}
-        >
-          {messages.map((msg, index) => (
-            <p key={index}>
-              <strong>{msg.sender}:</strong> {msg.text}
-            </p>
-          ))}
+      {!showAudioCall ? (
+        <div className="card-body">
+          <div
+            style={{
+              border: "1px solid black",
+              padding: "10px",
+              width: "300px",
+              height: "200px",
+              overflowY: "scroll",
+            }}
+          >
+            {messages.map((msg, index) => (
+              <p key={index}>
+                <strong>{msg.sender}:</strong> {msg.text}
+              </p>
+            ))}
+          </div>
+          <div>
+            <input
+              className="form-control"
+              placeholder="Type a message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            />
+            <button className="btn btn-primary mt-2" onClick={sendMessage}>
+              Send
+            </button>
+          </div>
+          <div className="mt-4">
+            {audioOffers[to.id] ? (
+              <button
+                className={
+                  showAudioCall ? "d-none" : "btn btn-warning btn-sm me-2"
+                }
+                onClick={() => setShowAudioCall(!showAudioCall)}
+              >
+                accept
+              </button>
+            ) : (
+              <button
+                className={
+                  showAudioCall ? "d-none" : "btn btn-warning btn-sm me-2"
+                }
+                onClick={() => setShowAudioCall(!showAudioCall)}
+              >
+                Start Audio Call
+              </button>
+            )}
+            <button
+              className={
+                showAudioCall ? "d-none" : "btn btn-warning btn-sm me-2"
+              }
+              onClick={() => setShowAudioCall(!showAudioCall)}
+            >
+              Start Audio Call
+            </button>
+          </div>
         </div>
-        <input
-          className="form-control"
-          placeholder="Type a message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        />
-        <button className="btn btn-primary mt-2" onClick={sendMessage}>
-          Send
-        </button>
-        <div>
-          <audio ref={remoteAudioRef} autoPlay controls className="mt-3" />
+      ) : (
+        <div className="card-body">
+          <AudioCall
+            socket={socket}
+            from={from}
+            to={to}
+            onEndCall={() => setShowAudioCall(false)}
+            offer={audioOffers[to.id]}
+            iceCandidate={audioIceCandidates[to.id]}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -4,31 +4,20 @@ import ChatContext from "./ChatContext";
 
 function ChatAction(props) {
   const userInitial = {
-    onlineUsers: [],
     currentChat: null,
     chatRequests: [],
+    chatIceCandidates: {},
+    chatOffers: {},
     chatError: {},
   };
   const [state, dispatch] = useReducer(ChatReducer, userInitial);
 
-  const setOnlineUsers = async (socket) => {
-    socket.on("users", (users) => {
-      console.log("users", users);
-      const userList = users.filter((u) => u.id !== socket.id);
-      console.log(userList, "userList");
-      dispatch({
-        type: "SET_LIVE_USERS",
-        payload: userList,
-      });
-    });
-  };
   const setCurrentChat = async (user) => {
     dispatch({
       type: "SET_CURRENT_CHAT",
       payload: user,
     });
   };
-
   const addReceivedRequests = async (socket) => {
     socket.on("receive-request", (newUserId) => {
       console.log(`Received Request: ${newUserId}`);
@@ -59,20 +48,46 @@ function ChatAction(props) {
       payload: to.id,
     });
   };
-
+  const setChatIceCandidates = (from, candidate) => {
+    console.log("setIceCandidates", from, candidate);
+    dispatch({
+      type: "SET_ICE_CANDIDATE",
+      payload: { from, candidate },
+    });
+  };
+  const setChatOffers = (from, offer) => {
+    console.log("setOffers", from, offer);
+    dispatch({
+      type: "SET_OFFER",
+      payload: { from, offer },
+    });
+  };
+  const clearChatConnections = (from) => {
+    dispatch({
+      type: "CLEAR_ICE_CANDIDATE",
+      payload: from.id,
+    });
+    dispatch({
+      type: "CLEAR_OFFER",
+      payload: from.id,
+    });
+  };
   return (
     <ChatContext.Provider
       value={{
-        onlineUsers: state.onlineUsers,
         currentChat: state.currentChat,
         chatRequests: state.chatRequests,
+        chatIceCandidates: state.chatIceCandidates,
+        chatOffers: state.chatOffers,
         chatError: state.chatError,
-        setOnlineUsers,
         setCurrentChat,
         addReceivedRequests,
         updateReceivedRequests,
         createChatrequest,
         ExitChat,
+        setChatIceCandidates,
+        setChatOffers,
+        clearChatConnections,
       }}
     >
       {props.children}

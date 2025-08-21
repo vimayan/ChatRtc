@@ -5,7 +5,11 @@ const UserReducer = (state, action) => {
         ...state,
         socket: action.payload,
       };
-
+    case "SET_LIVE_USERS":
+      return {
+        ...state,
+        onlineUsers: action.payload,
+      };
     case "CREATE_USER":
       return {
         ...state,
@@ -35,43 +39,6 @@ const UserReducer = (state, action) => {
       return {
         ...state,
         dataChannel: { ...state.dataChannel, ...action.payload },
-      };
-
-    case "SET_ICE_CANDIDATE":
-      return {
-        ...state,
-        iceCandidates: {
-          ...state.iceCandidates,
-          [action.payload.from.id]: [
-            ...(state.iceCandidates[action.payload.from.id] || []),
-            action.payload.candidate,
-          ],
-        },
-      };
-
-    case "CLEAR_ICE_CANDIDATE":
-      const updatedIceCandidates = { ...state.iceCandidates };
-      delete updatedIceCandidates[action.payload];
-      return {
-        ...state,
-        iceCandidates: updatedIceCandidates,
-      };
-
-    case "SET_OFFER":
-      return {
-        ...state,
-        offers: {
-          ...state.offers,
-          [action.payload.from.id]: action.payload.offer,
-        },
-      };
-
-    case "CLEAR_OFFER":
-      const updatedOffers = { ...state.offers };
-      delete updatedOffers[action.payload];
-      return {
-        ...state,
-        offers: updatedOffers,
       };
 
     case "USER_ERROR":
