@@ -36,10 +36,15 @@ function ChatAction(props) {
       });
     });
   };
-  const createChatrequest = (newUser, socket) => {
-    console.log("createChatrequest", newUser);
-    socket.emit("chat-user", socket.id, newUser.id);
-    setCurrentChat(newUser);
+  const createChatrequest = (newUser, socket , userName) => {
+      console.log("createChatrequest", newUser);
+      if(userName.length>=3){
+          socket.emit("chat-user", socket.id, newUser.id);
+          setCurrentChat(newUser);     
+      }else{
+          alert("please join")     
+      }
+
   };
   const ExitChat = (to) => {
     setCurrentChat(null);
