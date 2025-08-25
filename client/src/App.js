@@ -59,6 +59,17 @@ function App() {
     });
   }, []);
 
+  const joinChat = (user)=>{
+      if(!username){
+        alert("please enter username to join chat")
+      }else if(username.length<3){
+         alert("username length should be atleast three letters")
+      }else{
+       createChatrequest(user, socketRef.current)
+      }
+ 
+  }
+
   return (
     <div className="container mt-5">
       {!currentChat ? (
@@ -100,7 +111,7 @@ function App() {
                 ) : (
                   <button
                     className="btn btn-sm btn-outline-success"
-                    onClick={() => createChatrequest(user, socketRef.current)}
+                    onClick={()=>joinChat(user)}
                   >
                     Chat
                   </button>
