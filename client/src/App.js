@@ -59,13 +59,13 @@ function App() {
     });
   }, []);
 
-  const joinChat = (user)=>{
+  const joinChat = ()=>{
       if(!username){
         alert("please enter username to join chat")
       }else if(username.length<3){
          alert("username length should be atleast three letters")
       }else{
-       createChatrequest(user, socketRef.current)
+        handleRegister(username)
       }
  
   }
@@ -83,13 +83,13 @@ function App() {
             }
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.keyCode === 13) {
-                handleRegister(username);
+                joinChat();
               }
             }}
           />
           <button
             className="btn btn-primary mb-3"
-            onClick={() => handleRegister(username)}
+            onClick={() => joinChat()}
           >
             Join
           </button>
@@ -111,7 +111,7 @@ function App() {
                 ) : (
                   <button
                     className="btn btn-sm btn-outline-success"
-                    onClick={()=>joinChat(user)}
+                    onClick={()=>!userName?alert("please join"):createChatrequest(user, socketRef.current)}
                   >
                     Chat
                   </button>
