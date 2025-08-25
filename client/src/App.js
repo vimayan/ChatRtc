@@ -111,7 +111,7 @@ function App() {
                 ) : (
                   <button
                     className="btn btn-sm btn-outline-success"
-                    onClick={()=>createChatrequest(user, socketRef.current)}
+                    onClick={()=>createChatrequest(user, socketRef.current,userName)}
                   >
                     Chat
                   </button>
