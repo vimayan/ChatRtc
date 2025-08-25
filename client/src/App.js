@@ -79,7 +79,7 @@ function App() {
             className="form-control my-3"
             placeholder="Enter your name"
             onChange={(e) =>
-              setUsername(e.target.value + Math.floor(Math.random() * 100))
+              setUsername(e.target.value)
             }
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.keyCode === 13) {
